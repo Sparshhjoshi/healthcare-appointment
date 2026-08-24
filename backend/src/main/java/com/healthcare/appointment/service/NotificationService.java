@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import com.healthcare.appointment.entity.Medication;
 
@@ -25,6 +26,7 @@ public class NotificationService {
     @Value("${app.test.email:YOUR_TEST_EMAIL@gmail.com}")
     private String testEmail;
 
+    @Async
     public void sendBookingConfirmation(Appointment appointment) {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
@@ -83,6 +85,7 @@ public class NotificationService {
         }
     }
 
+    @Async
     public void sendCancellationEmail(Appointment appointment) {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
@@ -135,6 +138,7 @@ public class NotificationService {
         }
     }
 
+    @Async
     public void sendAppointmentReminder(Appointment appointment) {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
@@ -178,11 +182,12 @@ public class NotificationService {
             mailSender.send(doctorMsg);
 
             System.out.println("SUCCESS: Reminder emails sent.");
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("FAILED to send reminder email: " + e.getMessage());
         }
     }
 
+    @Async
     public void sendMedicationReminder(Medication medication) {
         String patientEmail = medication.getPatient().getEmail();
         if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
@@ -204,7 +209,7 @@ public class NotificationService {
             helper.setText(html, true);
             mailSender.send(message);
             System.out.println("SUCCESS: Medication reminder email sent for " + medication.getName());
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("FAILED to send medication reminder: " + e.getMessage());
         }
     }
