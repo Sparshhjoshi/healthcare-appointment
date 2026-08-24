@@ -30,7 +30,8 @@ public class AdminController {
             authReq.setPassword(dto.getPassword());
             authReq.setRole(com.healthcare.appointment.entity.Role.DOCTOR);
             
-            com.healthcare.appointment.entity.User doctorUser = authService.register(authReq);
+            com.healthcare.appointment.dto.AuthDto.AuthResponse authResp = authService.register(authReq);
+            com.healthcare.appointment.entity.User doctorUser = authResp.getUser();
 
             // 2. Create the DoctorProfile
             com.healthcare.appointment.dto.DoctorProfileDto profileDto = new com.healthcare.appointment.dto.DoctorProfileDto();
