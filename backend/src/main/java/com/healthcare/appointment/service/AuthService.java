@@ -26,7 +26,8 @@ public class AuthService {
 
     @PostConstruct
     public void initAdmin() {
-        if (userRepository.findByEmail("admin@admin.com").isEmpty()) {
+        java.util.Optional<User> adminOpt = userRepository.findByEmail("admin@admin.com");
+        if (adminOpt.isEmpty()) {
             User admin = User.builder()
                     .firstName("Super")
                     .lastName("Admin")
@@ -35,6 +36,12 @@ public class AuthService {
                     .role(com.healthcare.appointment.entity.Role.ADMIN)
                     .build();
             userRepository.save(admin);
+        } else {
+            User admin = adminOpt.get();
+            if (admin.getRole() != com.healthcare.appointment.entity.Role.ADMIN) {
+                admin.setRole(com.healthcare.appointment.entity.Role.ADMIN);
+                userRepository.save(admin);
+            }
         }
     }
 
