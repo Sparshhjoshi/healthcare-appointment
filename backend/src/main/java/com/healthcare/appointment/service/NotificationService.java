@@ -78,7 +78,7 @@ public class NotificationService {
             mailSender.send(doctorMsg);
             System.out.println("SUCCESS: Doctor notification email sent.");
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("FAILED to send email: " + e.getMessage());
         }
     }
@@ -130,7 +130,7 @@ public class NotificationService {
             mailSender.send(doctorMsg);
 
             System.out.println("SUCCESS: Cancellation emails sent.");
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("FAILED to send cancellation email: " + e.getMessage());
         }
     }
