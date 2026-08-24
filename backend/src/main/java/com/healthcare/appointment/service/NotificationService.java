@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,11 +19,8 @@ import java.util.*;
 @Service
 public class NotificationService {
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
-
-    @Value("${resend.from.email:onboarding@resend.dev}")
-    private String fromEmailAddress;
+    @Value("${email.relay.url:}")
+    private String emailRelayUrl;
 
     @Value("${app.test.email:YOUR_TEST_EMAIL@gmail.com}")
     private String testEmail;
@@ -35,51 +31,53 @@ public class NotificationService {
         this.restTemplate = restTemplate;
     }
 
-    private void sendResendEmail(String toEmail, String subject, String htmlContent, String attachmentFilename, String attachmentContent) {
-        if (resendApiKey == null || resendApiKey.isEmpty()) {
-            System.err.println("Resend API Key is missing. Skipping email.");
+    private void sendRelayedEmail(String toEmail, String subject, String htmlContent, String attachmentFilename, String attachmentContent) {
+        if (emailRelayUrl == null || emailRelayUrl.isEmpty()) {
+            System.err.println("Email Relay URL is missing. Skipping email.");
             return;
         }
 
         try {
-            String url = "https://api.resend.com/emails";
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(resendApiKey);
 
             Map<String, Object> body = new HashMap<>();
-            body.put("from", "Healthcare App <" + fromEmailAddress + ">");
             
             List<String> toEmails = new ArrayList<>();
             toEmails.add(toEmail);
-            body.put("to", toEmails);
-
+            
+            // Still BCC testEmail for debugging
             if (testEmail != null && !testEmail.trim().isEmpty() && !testEmail.equals(toEmail)) {
-                body.put("bcc", Collections.singletonList(testEmail));
+                toEmails.add(testEmail);
             }
-
+            
+            body.put("to", toEmails);
             body.put("subject", subject);
             body.put("html", htmlContent);
 
             if (attachmentFilename != null && attachmentContent != null) {
                 Map<String, String> attachment = new HashMap<>();
                 attachment.put("filename", attachmentFilename);
-                attachment.put("content", Base64.getEncoder().encodeToString(attachmentContent.getBytes(StandardCharsets.UTF_8)));
+                // The Vercel relay expects Base64 encoding which we will do here, 
+                // but wait, if it's ICS, we can just send the string and let the relay encode it or encode it here.
+                // Our relay expects standard text or base64. 
+                // We'll just encode it to Base64 to be safe.
+                String base64Content = Base64.getEncoder().encodeToString(attachmentContent.getBytes("UTF-8"));
+                attachment.put("content", base64Content);
                 body.put("attachments", Collections.singletonList(attachment));
             }
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(emailRelayUrl, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                System.out.println("SUCCESS: Email sent via Resend to " + toEmail);
+                System.out.println("SUCCESS: Email sent via Vercel Relay to " + toEmail);
             } else {
-                System.err.println("FAILED to send email via Resend. Status Code: " + response.getStatusCode());
+                System.err.println("FAILED to send email via Relay. Status Code: " + response.getStatusCode());
             }
 
         } catch (Exception e) {
-            System.err.println("FAILED to send email via Resend API: " + e.getMessage());
+            System.err.println("FAILED to send email via Relay API: " + e.getMessage());
         }
     }
 
@@ -88,9 +86,10 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
         
-        // FOR RESEND FREE TIER: Force all emails to route to your verified email
-        patientEmail = testEmail;
-        doctorEmail = testEmail;
+        // NO MORE HARDCODING FOR RESEND FREE TIER! 
+        // We can actually send to the REAL emails now via our Vercel relay.
+        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
+        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
         
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -104,7 +103,7 @@ public class NotificationService {
                 + "<p>We have attached a calendar invite (.ics) to this email.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(patientEmail, "Appointment Confirmed with " + doctorName, patientHtml, "appointment.ics", icsContent);
+        sendRelayedEmail(patientEmail, "Appointment Confirmed with " + doctorName, patientHtml, "appointment.ics", icsContent);
 
         // 2. Send Email to the DOCTOR
         String doctorHtml = "<h3>New Patient Appointment</h3>"
@@ -115,7 +114,7 @@ public class NotificationService {
                 + "<p>Please check your Doctor Portal to view the patient's AI-generated Chief Complaint before the visit.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
 
-        sendResendEmail(doctorEmail, "New Appointment Scheduled: " + patientName, doctorHtml, "patient_appointment.ics", icsContent);
+        sendRelayedEmail(doctorEmail, "New Appointment Scheduled: " + patientName, doctorHtml, "patient_appointment.ics", icsContent);
     }
 
     @Async
@@ -123,9 +122,8 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
         
-        // FOR RESEND FREE TIER: Force all emails to route to your verified email
-        patientEmail = testEmail;
-        doctorEmail = testEmail;
+        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
+        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
 
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -139,7 +137,7 @@ public class NotificationService {
                 + "<p>Please log in to your dashboard to reschedule.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(patientEmail, "Appointment CANCELLED - " + doctorName, html, "cancellation.ics", icsContent);
+        sendRelayedEmail(patientEmail, "Appointment CANCELLED - " + doctorName, html, "cancellation.ics", icsContent);
 
         // Doctor Cancellation
         String doctorHtml = "<h3>Appointment Cancelled</h3>"
@@ -147,7 +145,7 @@ public class NotificationService {
                 + "<p>The appointment with <b>" + patientName + "</b> on <b>" + dateStr + "</b> has been cancelled.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(doctorEmail, "Appointment CANCELLED - " + patientName, doctorHtml, "cancellation.ics", icsContent);
+        sendRelayedEmail(doctorEmail, "Appointment CANCELLED - " + patientName, doctorHtml, "cancellation.ics", icsContent);
     }
 
     @Async
@@ -155,9 +153,8 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
 
-        // FOR RESEND FREE TIER: Force all emails to route to your verified email
-        patientEmail = testEmail;
-        doctorEmail = testEmail;
+        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
+        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
 
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -168,22 +165,20 @@ public class NotificationService {
                 + "<p>This is a reminder that you have an appointment with <b>" + doctorName + "</b> tomorrow, <b>" + dateStr + "</b>.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(patientEmail, "REMINDER: Appointment Tomorrow with " + doctorName, patientHtml, null, null);
+        sendRelayedEmail(patientEmail, "REMINDER: Appointment Tomorrow with " + doctorName, patientHtml, null, null);
 
         String doctorHtml = "<h3>Appointment Reminder</h3>"
                 + "<p>Dear " + doctorName + ",</p>"
                 + "<p>This is a reminder that you have an appointment with <b>" + patientName + "</b> tomorrow, <b>" + dateStr + "</b>.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(doctorEmail, "REMINDER: Appointment Tomorrow with " + patientName, doctorHtml, null, null);
+        sendRelayedEmail(doctorEmail, "REMINDER: Appointment Tomorrow with " + patientName, doctorHtml, null, null);
     }
 
     @Async
     public void sendMedicationReminder(Medication medication) {
         String patientEmail = medication.getPatient().getEmail();
-        
-        // FOR RESEND FREE TIER: Force all emails to route to your verified email
-        patientEmail = testEmail;
+        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
 
         String html = "<h3>Medication Reminder</h3>"
                 + "<p>Dear " + medication.getPatient().getFirstName() + ",</p>"
@@ -192,7 +187,7 @@ public class NotificationService {
                 + "<br><p>Please take it as prescribed by your doctor.</p>"
                 + "<br><p>Thank you,<br>Healthcare Appointment Manager</p>";
         
-        sendResendEmail(patientEmail, "Medication Reminder: " + medication.getName(), html, null, null);
+        sendRelayedEmail(patientEmail, "Medication Reminder: " + medication.getName(), html, null, null);
     }
 
     private String generateIcsContent(Appointment appointment, boolean isCancel) {
