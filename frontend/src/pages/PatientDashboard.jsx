@@ -144,7 +144,7 @@ export default function PatientDashboard() {
                         <div key={apt.id} className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                                 <h3 style={{ fontSize: '1.5rem', margin: 0 }}>
-                                    Dr. {apt.doctor.user?.lastName}
+                                    Dr. {apt.doctor.lastName}
                                 </h3>
                                 <span style={{ background: apt.status === 'COMPLETED' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)', color: apt.status === 'COMPLETED' ? '#86efac' : '#93c5fd', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.875rem' }}>
                                     {apt.status}
@@ -201,7 +201,7 @@ export default function PatientDashboard() {
                     <div className="glass-panel" style={{ padding: '3rem', width: '90%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
                         <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#22c55e' }}>Post-Visit Summary</h2>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                            Dr. {selectedApt.doctor.user?.lastName} - {new Date(selectedApt.appointmentTime).toLocaleString()}
+                            Dr. {selectedApt.doctor.lastName} - {new Date(selectedApt.appointmentTime).toLocaleString()}
                         </p>
                         
                         <div style={{ 
