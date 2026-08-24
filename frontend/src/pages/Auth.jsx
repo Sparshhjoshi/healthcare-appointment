@@ -28,8 +28,9 @@ export default function Auth() {
             localStorage.setItem('currentUser', JSON.stringify(user));
             
             // Redirect based on role
-            if (user.role === 'DOCTOR') navigate('/doctor');
-            else if (user.role === 'ADMIN') navigate('/admin');
+            const userRole = user.user?.role || user.role; // Handle both nested and flat structures just in case
+            if (userRole === 'DOCTOR') navigate('/doctor');
+            else if (userRole === 'ADMIN') navigate('/admin');
             else navigate('/patient');
             
         } catch (err) {
