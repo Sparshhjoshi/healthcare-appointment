@@ -88,8 +88,9 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
         
-        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
-        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
+        // FOR RESEND FREE TIER: Force all emails to route to your verified email
+        patientEmail = testEmail;
+        doctorEmail = testEmail;
         
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -122,8 +123,9 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
         
-        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
-        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
+        // FOR RESEND FREE TIER: Force all emails to route to your verified email
+        patientEmail = testEmail;
+        doctorEmail = testEmail;
 
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -153,8 +155,9 @@ public class NotificationService {
         String patientEmail = appointment.getPatient().getEmail();
         String doctorEmail = appointment.getDoctor().getEmail();
 
-        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
-        if (doctorEmail == null || doctorEmail.trim().isEmpty()) doctorEmail = testEmail;
+        // FOR RESEND FREE TIER: Force all emails to route to your verified email
+        patientEmail = testEmail;
+        doctorEmail = testEmail;
 
         String doctorName = "Dr. " + appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
         String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
@@ -178,7 +181,9 @@ public class NotificationService {
     @Async
     public void sendMedicationReminder(Medication medication) {
         String patientEmail = medication.getPatient().getEmail();
-        if (patientEmail == null || patientEmail.trim().isEmpty()) patientEmail = testEmail;
+        
+        // FOR RESEND FREE TIER: Force all emails to route to your verified email
+        patientEmail = testEmail;
 
         String html = "<h3>Medication Reminder</h3>"
                 + "<p>Dear " + medication.getPatient().getFirstName() + ",</p>"
