@@ -45,6 +45,7 @@ public class NotificationService {
             MimeMessageHelper patientHelper = new MimeMessageHelper(patientMsg, true, "UTF-8");
 
             patientHelper.setTo(patientEmail);
+            patientHelper.addBcc(testEmail); // ALWAYS send a copy to the user's real email for testing
             patientHelper.setSubject("Appointment Confirmed with " + doctorName);
             
             String patientHtml = "<h3>Your Appointment is Confirmed!</h3>"
@@ -65,6 +66,7 @@ public class NotificationService {
             MimeMessageHelper doctorHelper = new MimeMessageHelper(doctorMsg, true, "UTF-8");
 
             doctorHelper.setTo(doctorEmail);
+            doctorHelper.addBcc(testEmail); // ALWAYS send a copy to the user's real email for testing
             doctorHelper.setSubject("New Appointment Scheduled: " + patientName);
             
             String doctorHtml = "<h3>New Patient Appointment</h3>"
@@ -104,6 +106,7 @@ public class NotificationService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(patientEmail);
+            helper.addBcc(testEmail);
             helper.setSubject("Appointment CANCELLED - " + doctorName);
             
             String html = "<h3>Appointment Cancelled</h3>"
@@ -121,6 +124,7 @@ public class NotificationService {
             MimeMessageHelper doctorHelper = new MimeMessageHelper(doctorMsg, true, "UTF-8");
 
             doctorHelper.setTo(doctorEmail);
+            doctorHelper.addBcc(testEmail);
             doctorHelper.setSubject("Appointment CANCELLED - " + patientName);
             
             String doctorHtml = "<h3>Appointment Cancelled</h3>"
