@@ -16,7 +16,7 @@ export default function DoctorDashboard() {
     const [completing, setCompleting] = useState(false);
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    const DOCTOR_ID = currentUser ? currentUser.id : 2; 
+    const DOCTOR_ID = currentUser?.user?.id || currentUser?.id || 2; 
 
     useEffect(() => {
         loadAppointments();

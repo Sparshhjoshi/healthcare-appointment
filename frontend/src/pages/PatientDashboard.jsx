@@ -12,7 +12,7 @@ export default function PatientDashboard() {
     const [searchSpec, setSearchSpec] = useState('');
     
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    const PATIENT_ID = currentUser ? currentUser.id : 1;
+    const PATIENT_ID = currentUser?.user?.id || currentUser?.id || 1;
     
     const [myAppointments, setMyAppointments] = useState([]);
     const [selectedApt, setSelectedApt] = useState(null); // for viewing summary
